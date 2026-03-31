@@ -1,0 +1,45 @@
+# IntelliJ / VS Code / IDE / Editor
+.vscode/
+.idea/
+*.iml
+
+# Gradle if any
+.gradle/
+build/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.env
+.env
+venv/
+
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java / Maven
+target/
+**/target/
+*.log
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Spring Boot
+spring.log
