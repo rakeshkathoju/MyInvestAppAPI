@@ -117,3 +117,23 @@ or
 ```
 👉 Runs on: http://localhost:8080
 
+
+```bash
+cd ../ai-service-python
+pip install fastapi uvicorn
+```
+
+create main.py and run    
+```bash
+uvicorn main:app --reload --port 8002
+```
+
+```bash
+cd ../trading-service-python
+pip install fastapi uvicorn psycopg2-binary
+```
+Create main.py and Run
+```bash
+uvicorn main:app --reload --port 8001
+````
+👉 http://localhost:8001/stocks
