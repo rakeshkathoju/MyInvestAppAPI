@@ -117,11 +117,25 @@ or
 ```
 👉 Runs on: http://localhost:8080
 
+## Python Setup
+User Request  
+    ↓  
+api-gateway-node (Port 8000)  
+    ↓  
+    ├→ user-service-java (Auth, users) :8081  
+    ├→ trading-service-python (Stocks) :8001  
+    │   ├→ Calls ai-service-python  
+    │   └→ Returns: stocks + predictions  
+    └→ ai-service-python (ML Predict) :8002  
+        ├→ Analyzes stock data  
+        └→ Returns: BUY/SELL signals  
+
 
 ```bash
 cd ../ai-service-python
 pip install fastapi uvicorn
 ```
+pip freeze > requirements.txt  
 
 create main.py and run    
 ```bash
@@ -137,3 +151,42 @@ Create main.py and Run
 uvicorn main:app --reload --port 8001
 ````
 👉 http://localhost:8001/stocks
+
+```bash
+# Clone repo
+git clone <repo>
+
+# Create venv from scratch
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# Install from requirements.txt
+pip install -r requirements.txt
+.\venv\Scripts\Activate.ps1; 
+pip install -r requirements.txt
+```
+
+
+Why Separate?  
+1. Separation of Concerns  
+Trading service = data provider  
+AI service = intelligence/analysis  
+Each does one thing well  
+2. Independent Scaling  
+Heavy prediction load? Scale ai-service-python  
+High traffic for stock data? Scale trading-service-python  
+3. Different Dependencies  
+Trading: FastAPI, DB drivers  
+AI: FastAPI, ML libraries (scikit-learn, TensorFlow, pandas)  
+4. Independent Deployment  
+Update AI model without affecting stock data service  
+Deploy trading service separately  
+5. Reusability  
+AI service consumed by: trading-service, mobile app, web app, etc.  
+Trading service consumed by: AI service, dashboard, etc.    
+
+API Gateway receives request  
+Trading Service fetches RELIANCE stock price (2950)  
+Trading Service calls AI Service → "Predict for RELIANCE"  
+AI Service returns → {"signal": "BUY"}  
+Trading Service responds → {"stock": "RELIANCE", "price": 2950, "signal": "BUY"}  
