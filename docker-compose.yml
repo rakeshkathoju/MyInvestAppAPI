@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+
+  # 🌐 API Gateway (Node.js)
+  api-gateway:
+    build:
+      context: ./api-gateway-node
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./api-gateway-node/.env
+    depends_on:
+      - trading-service
+      - ai-service
+      - user-service
+    networks:
+      - myinvest-network
+
+
+  # 📊 Trading Service (Python + Neon DB)
+  trading-service:
+    build:
+      context: ./trading-service-python
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"   # 🔥 external:internal
+    env_file:
+      - ./trading-service-python/.env   # ✅ VERY IMPORTANT
+    networks:
+      - myinvest-network
+
+
+  # 🤖 AI Service (Python)
+  ai-service:
+    build:
+      context: ./ai-service-python
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - myinvest-network
+
+
+  # 👤 User Service (Java - Spring Boot)
+  user-service:
+    build:
+      context: ./user-service-java
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+      - myinvest-network
+
+
+# 🔗 Network
+networks:
+  myinvest-network:
+    driver: bridge

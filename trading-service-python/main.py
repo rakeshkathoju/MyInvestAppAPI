@@ -4,28 +4,19 @@ from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
 app = FastAPI()
 
-# Database configuration from .env
-DB_HOST = os.getenv("DB_HOST")
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_PORT = os.getenv("DB_PORT", "5432")
+# ✅ Use Neon DATABASE_URL
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Database connection function
+# 🔌 Database connection function
 def get_db_connection():
-    """Create and return a database connection to Neon"""
     try:
         conn = psycopg2.connect(
-            host=DB_HOST,
-            database=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            port=DB_PORT,
+            DATABASE_URL,
             sslmode="require"
         )
         return conn
@@ -33,42 +24,47 @@ def get_db_connection():
         print(f"❌ Database connection failed: {e}")
         return None
 
+
+# 🏠 Root endpoint
 @app.get("/")
 def read_root():
-    """Health check endpoint"""
     return {"status": "Trading Service is running"}
 
+
+# ❤️ Health check
 @app.get("/health")
 def health_check():
-    """Check database connection"""
     conn = get_db_connection()
     if conn:
         conn.close()
         return {"status": "healthy", "database": "connected"}
     return {"status": "unhealthy", "database": "disconnected"}
 
+
+# 📊 Get stocks
 @app.get("/stocks")
 def get_stocks():
-    """Get stocks from Neon database"""
     conn = get_db_connection()
+
     if not conn:
         return {"error": "Database connection failed"}
-    
+
     try:
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-        # Adjust table name to your actual table
+
+        # 🔥 Make sure this table exists in Neon
         cursor.execute("SELECT * FROM stock_signals LIMIT 10")
-        stocks = cursor.fetchall()
+        rows = cursor.fetchall()
+
         cursor.close()
         conn.close()
 
-        if not stocks:
-            # Fallback sample data
-            return [{"stock": "RELIANCE", "price": 2950121}]
+        if not rows:
+            return [{"stock_name": "RELIANCE", "price": 2950}]
 
-        # Convert rows (dicts) into clean JSON
+        # ✅ Clean JSON response
         result = []
-        for row in stocks:
+        for row in rows:
             result.append({
                 "id": row.get("id"),
                 "stock_name": row.get("stock_name"),
@@ -79,9 +75,60 @@ def get_stocks():
                 "risk_reward": row.get("risk_reward"),
                 "pnl": row.get("pnl")
             })
+
         return result
 
     except Exception as e:
-        print(f"❌ Query failed: {e}")
+        import traceback
+        print("❌ Query failed:", e)
+        traceback.print_exc()
+
+        return {
+            "error": "Query failed",
+            "details": str(e)
+        }
+
+
+# 💰 Place trade (basic version)
+@app.post("/trade")
+def place_trade(trade: dict):
+    conn = get_db_connection()
+
+    if not conn:
+        return {"error": "Database connection failed"}
+
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            INSERT INTO stock_signals 
+            (stock_name, price, target, stop_loss, quantity, risk_reward, pnl)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+        """, (
+            trade.get("stock_name"),
+            trade.get("price"),
+            trade.get("target"),
+            trade.get("stop_loss"),
+            trade.get("quantity"),
+            trade.get("risk_reward"),
+            trade.get("pnl")
+        ))
+
+        new_id = cursor.fetchone()[0]
+        conn.commit()
+
+        cursor.close()
         conn.close()
-        return [{"stock": "RELIANCE", "price": 290050}]
+
+        return {"message": "Trade inserted", "id": new_id}
+
+    except Exception as e:
+        import traceback
+        print("❌ Insert failed:", e)
+        traceback.print_exc()
+
+        return {
+            "error": "Insert failed",
+            "details": str(e)
+        }
