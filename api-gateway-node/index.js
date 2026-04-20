@@ -53,6 +53,67 @@ app.post("/trade", async (req, res) => {
   }
 });
 
+// ---------- AI Service routes ----------
+
+app.post("/ai/train", async (req, res) => {
+  try {
+    const response = await axios.post(`${AI_SERVICE_URL}/train`, req.body, { timeout: 120000 });
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: "Error training model", details: err.message });
+  }
+});
+
+app.post("/ai/predict", async (req, res) => {
+  try {
+    const response = await axios.post(`${AI_SERVICE_URL}/predict`, req.body, { timeout: 15000 });
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: "Error getting prediction", details: err.message });
+  }
+});
+
+// ---------- User Service routes ----------
+
+app.post("/users/register", async (req, res) => {
+  try {
+    const response = await axios.post(`${USER_SERVICE_URL}/users/register`, req.body);
+    res.status(response.status).json(response.data);
+  } catch (err) {
+    const status = err.response?.status || 500;
+    res.status(status).json(err.response?.data || { error: "Error registering user" });
+  }
+});
+
+app.post("/users/login", async (req, res) => {
+  try {
+    const response = await axios.post(`${USER_SERVICE_URL}/users/login`, req.body);
+    res.json(response.data);
+  } catch (err) {
+    const status = err.response?.status || 500;
+    res.status(status).json(err.response?.data || { error: "Error logging in" });
+  }
+});
+
+app.get("/users/:id", async (req, res) => {
+  try {
+    const response = await axios.get(`${USER_SERVICE_URL}/users/${req.params.id}`);
+    res.json(response.data);
+  } catch (err) {
+    const status = err.response?.status || 500;
+    res.status(status).json(err.response?.data || { error: "User not found" });
+  }
+});
+
+app.get("/users/:id/portfolio", async (req, res) => {
+  try {
+    const response = await axios.get(`${USER_SERVICE_URL}/users/${req.params.id}/portfolio`);
+    res.json(response.data);
+  } catch (err) {
+    res.status(500).json({ error: "Error fetching portfolio", details: err.message });
+  }
+});
+
 app.listen(3000, () => {
   console.log("🚀 API Gateway running on http://localhost:3000");
   console.log(`   Trading Service: ${TRADING_SERVICE_URL}`);
