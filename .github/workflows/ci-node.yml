@@ -1,0 +1,55 @@
+name: CI — API Gateway (Node.js)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'api-gateway-node/**'
+      - '.github/workflows/ci-node.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'api-gateway-node/**'
+      - '.github/workflows/ci-node.yml'
+
+jobs:
+  lint-and-build:
+    name: Lint & Syntax Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api-gateway-node
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: npm
+          cache-dependency-path: api-gateway-node/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Syntax check
+        run: node --check index.js
+
+  # Uncomment when tests are added:
+  # test:
+  #   name: Run Tests
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       working-directory: api-gateway-node
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '18'
+  #         cache: npm
+  #         cache-dependency-path: api-gateway-node/package-lock.json
+  #     - run: npm ci
+  #     - run: npm test

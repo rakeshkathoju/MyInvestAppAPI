@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
 
   # 🌐 API Gateway (Node.js)
@@ -50,6 +48,23 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+    networks:
+      - myinvest-network
+
+
+  # 🤖 MCP Server (AI assistant tool interface)
+  mcp-server:
+    build:
+      context: ./mcp-server
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      - API_GATEWAY_URL=http://api-gateway:3000
+      - MCP_TRANSPORT=sse
+      - MCP_PORT=8002
+    depends_on:
+      - api-gateway
     networks:
       - myinvest-network
 

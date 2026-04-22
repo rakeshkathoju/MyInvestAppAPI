@@ -1,0 +1,77 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 6am UTC
+
+jobs:
+  gitleaks:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  bandit:
+    name: Python Security (bandit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install bandit
+        run: pip install bandit
+
+      - name: Scan trading-service-python
+        run: bandit -r trading-service-python/ -ll --exclude trading-service-python/data
+
+      - name: Scan ai-service-python
+        run: bandit -r ai-service-python/ -ll
+
+  trivy:
+    name: Container Scan (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: api-gateway
+            context: ./api-gateway-node
+          - service: trading-service
+            context: ./trading-service-python
+          - service: ai-service
+            context: ./ai-service-python
+          - service: user-service
+            context: ./user-service-java
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build ${{ matrix.service }} image
+        run: docker build -t scan-${{ matrix.service }}:latest ${{ matrix.context }}
+
+      - name: Trivy scan — ${{ matrix.service }}
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: scan-${{ matrix.service }}:latest
+          format: table
+          exit-code: '1'
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true

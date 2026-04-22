@@ -1,0 +1,45 @@
+name: CI — User Service (Java)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'user-service-java/**'
+      - '.github/workflows/ci-java.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'user-service-java/**'
+      - '.github/workflows/ci-java.yml'
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: user-service-java
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: temurin
+          cache: maven
+          cache-dependency-path: user-service-java/pom.xml
+
+      - name: Build & run tests
+        # Uses H2 in-memory DB — no external database needed
+        run: ./mvnw verify --no-transfer-progress
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: user-service-java/target/surefire-reports/
+          retention-days: 7

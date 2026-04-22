@@ -1,0 +1,55 @@
+name: CI — AI Service (Python)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ai-service-python/**'
+      - '.github/workflows/ci-python-ai.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ai-service-python/**'
+      - '.github/workflows/ci-python-ai.yml'
+
+jobs:
+  lint:
+    name: Lint (flake8)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-service-python
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: ai-service-python/requirements.txt
+
+      - name: Install flake8
+        run: pip install flake8
+
+      - name: Lint
+        run: flake8 . --max-line-length=120 --ignore=W503,E402
+
+  # Uncomment when tests are added (pytest):
+  # test:
+  #   name: Run Tests
+  #   runs-on: ubuntu-latest
+  #   defaults:
+  #     run:
+  #       working-directory: ai-service-python
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: '3.11'
+  #         cache: pip
+  #         cache-dependency-path: ai-service-python/requirements.txt
+  #     - run: pip install -r requirements.txt pytest
+  #     - run: pytest tests/ -v
