@@ -3,6 +3,60 @@
 This project demonstrates a microservices architecture for trading applications.  
 It includes services written in Node.js, Java, and Python, along with an AI service.
 
+## Quick Start Commands (macOS)
+
+Run these commands from the project root.
+
+```bash
+cd /Users/rakeshkumarkathoju/Downloads/MyInvestAppAPI
+```
+
+1. Start Docker Desktop (only needed if daemon is not running):
+
+```bash
+open -a Docker
+docker info --format '{{.ServerVersion}}'
+```
+
+2. Set your trading database URL (required):
+
+```bash
+nano trading-service-python/.env
+```
+
+Update:
+
+```env
+DATABASE_URL=postgresql://username:password@host:5432/dbname?sslmode=require
+```
+
+3. Build and start core services (gateway + trading + ai + user):
+
+```bash
+docker compose up --build api-gateway trading-service ai-service user-service
+```
+
+4. Verify health from another terminal:
+
+```bash
+curl http://localhost:3000/health
+curl http://localhost:8001/health
+curl http://localhost:8000/health
+curl http://localhost:8081/users/health
+```
+
+5. Stop services:
+
+```bash
+docker compose down
+```
+
+Optional (includes MCP server too):
+
+```bash
+docker compose up --build
+```
+
 ## Project Structure
 
 trading-microservices/  
