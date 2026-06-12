@@ -147,7 +147,7 @@ app.get("/health", async (req, res) => {
   }
 
   try {
-    await axios.get(`${USER_SERVICE_URL}/health`, { timeout: 2000 });
+    await axios.get(`${USER_SERVICE_URL}/users/health`, { timeout: 2000 });
     health.services.user = "✅ connected";
   } catch {
     health.services.user = "❌ disconnected";

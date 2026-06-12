@@ -390,3 +390,18 @@ docker compose version
 docker compose up --build  
 docker compose down
 
+
+
+docker --version
+docker compose version
+docker compose up --build api-gateway trading-service ai-service user-service
+
+docker compose ps --all
+
+docker compose up -d --force-recreate user-service
+
+curl http://localhost:3000/health
+curl http://localhost:3000/stocks
+curl http://localhost:8001/health
+curl http://localhost:8000/health
+curl http://localhost:8081/users/health
