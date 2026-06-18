@@ -1,16 +1,3 @@
-"""
-download_data.py
-----------------
-Downloads ICICIBANK 1-minute OHLCV data from Yahoo Finance and saves it
-as data/ICICIBANK_1min.csv in the format expected by backtest.py.
-
-Note: yfinance provides up to 7 days of 1-min data for free.
-Run this script daily to keep your local dataset fresh.
-
-Usage:
-    python3 data/download_data.py
-"""
-
 import os
 import yfinance as yf
 import pandas as pd

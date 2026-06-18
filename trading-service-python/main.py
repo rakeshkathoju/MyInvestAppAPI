@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from scanner.sector_strength import build_sector_strength_json, fetch_sector_strength
 
 # Load environment variables
 load_dotenv()
@@ -87,6 +88,13 @@ def get_stocks():
             "error": "Query failed",
             "details": str(e)
         }
+
+
+# 📈 Sector strength
+@app.get("/sector-strength")
+def get_sector_strength():
+    performances = fetch_sector_strength()
+    return build_sector_strength_json(performances)
 
 
 # 💰 Place trade (basic version)

@@ -43,6 +43,19 @@ app.get("/stocks", async (req, res) => {
   }
 });
 
+// Sector strength
+app.get("/sector-strength", async (req, res) => {
+  try {
+    const response = await axios.get(`${TRADING_SERVICE_URL}/sector-strength`, {
+      timeout: 15000
+    });
+    res.json(response.data);
+  } catch (err) {
+    console.error("❌ Error fetching sector strength:", err.message);
+    res.status(500).json({ error: "Error fetching sector strength", details: err.message });
+  }
+});
+
 // INSERT trade
 app.post("/trade", async (req, res) => {
   try {
@@ -120,6 +133,7 @@ app.listen(3000, () => {
   console.log(`   AI Service: ${AI_SERVICE_URL}`);
   console.log(`   User Service: ${USER_SERVICE_URL}`);
 });
+
 
 app.get("/health", async (req, res) => {
   const health = {

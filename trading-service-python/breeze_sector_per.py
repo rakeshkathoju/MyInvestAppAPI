@@ -1,20 +1,26 @@
-from breeze_connect import BreezeConnect
+import os
 import datetime
+import time
+import logging
+from dotenv import load_dotenv
+from breeze_connect import BreezeConnect
 
-# Step 1: Initialize Breeze client with your API key
-breeze = BreezeConnect(api_key="4k97727977q8Z191_83e52X%7B413478")
+load_dotenv()
 
-# Step 2: Generate session using your API secret + daily session token
-breeze.generate_session(
-    api_secret="602qdw#86451s78O57K_C3h`!397817y",
-    session_token="your_session_token"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-# Step 3: Define today's date
-today = datetime.date.today().strftime("%Y-%m-%d")
+BREEZE_API_KEY = os.getenv("BREEZE_API_KEY")
+BREEZE_API_SECRET = os.getenv("BREEZE_API_SECRET")
+BREEZE_SESSION_TOKEN = os.getenv("BREEZE_SESSION_TOKEN")
+MARKET_OPEN = os.getenv("MARKET_OPEN", "09:15")
+MARKET_CLOSE = os.getenv("MARKET_CLOSE", "09:30")
 
-# Step 4: Example sector indices (replace with actual codes from ICICI Direct)
-sector_indices = {
+if not all([BREEZE_API_KEY, BREEZE_API_SECRET, BREEZE_SESSION_TOKEN]):
+    raise RuntimeError(
+        "Missing Breeze credentials. Set BREEZE_API_KEY, BREEZE_API_SECRET, and BREEZE_SESSION_TOKEN in your environment or .env file."
+    )
+
+SECTOR_INDICES = {
     "NIFTY IT": "NIFTYIT",
     "NIFTY BANK": "NIFTYBANK",
     "NIFTY FMCG": "NIFTYFMCG",
@@ -25,29 +31,78 @@ sector_indices = {
     "NIFTY REALTY": "NIFTYREALTY"
 }
 
-# Step 5: Fetch first 15 minutes OHLC data
-performers = {}
-for sector, code in sector_indices.items():
+
+def init_breeze_client():
+    breeze = BreezeConnect(api_key=BREEZE_API_KEY)
+    breeze.generate_session(
+        api_secret=BREEZE_API_SECRET,
+        session_token=BREEZE_SESSION_TOKEN,
+    )
+    return breeze
+
+
+def fetch_first_15_minute_performance(breeze, sector_code):
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    from_date = f"{today}T{MARKET_OPEN}:00.000Z"
+    to_date = f"{today}T{MARKET_CLOSE}:00.000Z"
+
     data = breeze.get_historical_data(
         interval="1minute",
-        from_date=f"{today}T09:15:00.000Z",
-        to_date=f"{today}T09:30:00.000Z",
-        stock_code=code,
+        from_date=from_date,
+        to_date=to_date,
+        stock_code=sector_code,
         exchange_code="NSE",
         product_type="cash"
     )
-    if data:
-        open_price = float(data[0]['open'])
-        close_price = float(data[-1]['close'])
-        change_pct = ((close_price - open_price) / open_price) * 100
-        performers[sector] = round(change_pct, 2)
 
-# Step 6: Sort sectors by performance
-sorted_perf = sorted(performers.items(), key=lambda x: x[1], reverse=True)
+    if not data:
+        logging.warning("No data returned for %s", sector_code)
+        return None
 
-print("Top 3 Sector Performers (First 15 mins):")
-for sector, perf in sorted_perf[:3]:
-    print(f"{sector}: {perf}%")
+    try:
+        open_price = float(data[0]["open"])
+        close_price = float(data[-1]["close"])
+    except (KeyError, IndexError, ValueError) as exc:
+        logging.error("Failed to parse Breeze data for %s: %s", sector_code, exc)
+        return None
 
-print("\nBottom Sector:")
-print(f"{sorted_perf[-1][0]}: {sorted_perf[-1][1]}%")
+    if open_price == 0:
+        logging.warning("Open price is zero for %s", sector_code)
+        return None
+
+    return ((close_price - open_price) / open_price) * 100
+
+
+def print_top_winner_loser(performers):
+    if not performers:
+        print("No sector performance data available.")
+        return
+
+    sorted_perf = sorted(performers.items(), key=lambda item: item[1])
+    loser, loser_pct = sorted_perf[0]
+    winner, winner_pct = sorted_perf[-1]
+
+    print("\nSector performance for first 15 minutes:")
+    for sector, pct in sorted_perf:
+        print(f"  {sector}: {pct:.2f}%")
+
+    print("\nTop winner:")
+    print(f"  {winner}: {winner_pct:.2f}%")
+    print("Top loser:")
+    print(f"  {loser}: {loser_pct:.2f}%")
+
+
+def run():
+    breeze = init_breeze_client()
+    performers = {}
+
+    for sector_name, sector_code in SECTOR_INDICES.items():
+        perf = fetch_first_15_minute_performance(breeze, sector_code)
+        if perf is not None:
+            performers[sector_name] = perf
+
+    print_top_winner_loser(performers)
+
+
+if __name__ == "__main__":
+    run()
