@@ -6,6 +6,8 @@ require("dotenv").config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+// TradingView can send plain-text alert bodies; keep them intact for forwarding.
+app.use(express.text({ type: "text/*" }));
 
 // Service URLs from environment or defaults
 const TRADING_SERVICE_URL = process.env.TRADING_SERVICE_URL || "http://trading-service:8001";

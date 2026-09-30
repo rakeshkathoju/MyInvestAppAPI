@@ -1,0 +1,1 @@
+from .scalping_strategy import generate_scalping_signal
